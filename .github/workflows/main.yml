@@ -4,11 +4,11 @@ on:
   push:
     paths:
       - '**.py'
-      - '.github/workflows/ci_cd_todo.yml'
+      - '.github/workflows/main.yml'
   pull_request:
     paths:
       - '**.py'
-      - '.github/workflows/ci_cd_todo.yml'
+      - '.github/workflows/main.yml'
 
 
 jobs:
