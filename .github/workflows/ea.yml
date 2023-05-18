@@ -1,17 +1,17 @@
-name: despliegue
+name: CI/CD todo
+
 
 on:
   push:
-    branches: [ main ]
     paths:
-      - src/**
+      - '**.py'
+      - '.github/workflows/ci_cd_todo.yml'
   pull_request:
-    branches: [ main ]
     paths:
-      - src/**
+      - '**.py'
+      - '.github/workflows/ci_cd_todo.yml'
 
 jobs:
-
   flake8-lint:
     name: Lint with flake8
     runs-on: ubuntu-latest
@@ -21,9 +21,11 @@ jobs:
       - name: Set up Python environment
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
-      - name: flake8 Lint
-        uses: py-actions/flake8@v2
+          python-version: "3.11"          
+      - name: Install dependencies
+        run: pip install flake8
+      - name: Run flake8
+        run: flake8 --ignore=W291,E302 .
 
   build:
     name: build and push Docker image
@@ -43,11 +45,10 @@ jobs:
         with:
           context: .
           push: true 
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/examen:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/fastapi-ceti:latest
       # - name: Sleep for 60 seconds
       #   run: sleep 60s
       #   shell: bash
-
   aws:
     name: Deploy image to aws
     needs: build
@@ -56,22 +57,13 @@ jobs:
     - name: multiple command
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.HOSTNAME }}
-        username: ${{ secrets.USER_NAME }}
+        host: ${{ secrets.AWS_HOSTNAME }}
+        username: ${{ secrets.AWS_USERNAME }}
         key: ${{ secrets.AWS_PRIVATE_KEY }}
         port: 22  # ${{ secrets.PORT }}
         script: |
             sleep 30
             docker stop web && docker rm web
-            docker rmi albertojm3/examen
-            docker run -d -p 80:5000 --name web albertojm3/examen
+            docker rmi albertojm3/fastapi-ceti
+            docker run -d -p 80:8000 --name web albertojm3/fastapi-ceti
             sleep 30
- curl:
-    name: Test URL con curl
-    needs: aws
-    runs-on: ubuntu-latest
-    steps:
-    - name: curl
-      uses: wei/curl@master
-      with:
-        args: http://${{ secrets.HOSTNAME }}
